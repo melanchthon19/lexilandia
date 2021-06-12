@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import re
+import os
 from PyPDF2 import PdfFileReader
 
 
@@ -49,7 +50,6 @@ def extract_text(file):
         # traversing pdf pages and getting text
         for i in range(num_ps):
             page = pdf.getPage(i)
-            #print(repr(page.extractText()))
             text.extend(page.extractText())
 
     return text
@@ -62,14 +62,23 @@ def extract_tales(file):
 
     return tales
 
+def save_to_dir(tales):
+    folder = 'subterra'
+    try:
+        os.makedirs(folder)
+        print(f'folder "{folder}" created')
+    except FileExistsError:
+        print(f'not saving to folder: "{folder}" already exists')
+        quit()
+
+    for title, text in tales.items():
+        print(f'storing {title} in txt file')
+        with open(os.path.join(folder, '{}.txt'.format(title)), 'w') as output:
+            for line in text:
+                output.write(line + '\n')
+
+
 if __name__ == '__main__':
     file = 'subterra.pdf'
     tales = extract_tales(file)
-    for k,v in tales.items():
-        print(k)
-
-    for title, text in tales.items():
-        with open(f'{title}.txt', 'w') as output:
-            for line in text:
-                output.write(line)
-        quit()
+    save_to_dir(tales)
