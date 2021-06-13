@@ -12,7 +12,8 @@ def preprocess(text):
     text = re.sub(r',', ' COMA1', text)
     text = re.sub(r';', ' COMA2', text)
     text = re.sub(r':', ' COMA3', text)
-    text = re.sub(r'[¿\?¡!\-&%$_]', 'PUNT', text)
+    #text = re.sub(r'-', ' COMA4 ', text)
+    text = re.sub(r'[¿\?¡!\-\&%$_]', 'PUNT', text)
     #text = ' '.join([word for word in text if word not in stopwords.words('spanish')])
     sentences = re.split('[\.\n(PUNT)]', text)
     sentences = [s.strip() for s in sentences]
@@ -53,30 +54,31 @@ def compare_vocab(file_f, file_s, file_sw):
     sentences = read_tale(file_s)
     sw = read_stopwords(file_sw)
     unks = unknown_vocab(formas, sentences, sw)
-    print(unks)
-    for unk in unks:
-        print(unk)
-        print(revert(sentences[unk[0]]))
+
+    output_results(unks, sentences, formas)
+
+    return unks
 
 def penalize_sw(words, partial, N, sw):
     csw = len([word for word in words if word in sw])
-    if csw == len(words):
+    if csw == N:
         return 100000
     else:
-        return partial/N
+        return partial/(N-csw)
 
-def compute_score(sentence, formas, sw):
+def sentence_score(sentence, formas, sw):
     words = sentence.split()
+    N = len(words)
     if remove_sw:
-        N = len([word for word in words if word not in sw])
-        partial = sum([float(formas[word][2])/N for word in words
-                    if word in formas.keys() and word not in sw])
+        #N = len([word for word in words if word not in sw])
+        partial = sum([float(formas[word][2]) for word in words
+                    if word in formas.keys() and word not in sw])/N
         score = penalize_sw(words, partial, N, sw)
 
     else:
-        N = len([word for word in words if word in formas.keys()])
-        score = sum([float(formas[word][2])/N for word in words
-                    if word in formas.keys()])
+        #N = len([word for word in words if word in formas.keys()])
+        score = sum([float(formas[word][2]) for word in words
+                    if word in formas.keys()])/N
 
     return score
 
@@ -94,22 +96,56 @@ def revert(sentence):
         sentence = re.sub(r' COMA1', ',', sentence)
         sentence = re.sub(r' COMA2', ';', sentence)
         sentence = re.sub(r' COMA3', ':', sentence)
+        sentence = re.sub(r' COMA4', '-', sentence)
 
     return sentence
 
 def unknown_vocab(formas, sentences, sw):
     rank = {}
     for i, s in enumerate(sentences):
-        rank[i] = compute_score(s, formas, sw)
+        rank[i] = sentence_score(s, formas, sw)
 
     most_unk = rank_unk(rank)
 
     return most_unk
 
+def word_score(word, formas):
+    try:
+        return float(formas[word][2])
+    except KeyError:
+        return 0
+
+def highlight(sentence, formas):
+    most_unk = (100000, 0)
+    bold = []
+    for i, word in enumerate(sentence.split()):
+        if word in P:
+            continue
+        score = word_score(word, formas)
+        if score == 0:
+            bold.append(i)
+        else:
+            if score < most_unk[0]:
+                most_unk = (score, i)
+
+    bold.append(most_unk[1])
+
+    sentence = ' '.join([word.upper() if i in bold else word
+                        for i, word in enumerate(sentence.split())])
+
+    return sentence
+
+def output_results(unks, sentences, formas):
+    for sent_ix, score in unks[:10]:
+        bold = highlight(sentences[sent_ix], formas)
+        print(sent_ix, score, '\n', revert(bold))
+
 
 if __name__ == '__main__':
+    P = ['COMA1', 'COMA2', 'COMA3']
     folder = 'subterra'
-    tale = 'LOS INVÁLIDOS.txt'
+    tale = 'JUAN FARIÑA.txt'
+    #tale = 'LOS INVÁLIDOS.txt'
     file_f = '10000_formas.txt'
     file_sw = 'stopwords.txt'
     remove_sw = True
