@@ -53,6 +53,7 @@ def compare_vocab(file_f, file_s, file_sw):
     sentences = read_tale(file_s)
     sw = read_stopwords(file_sw)
     unks = unknown_vocab(formas, sentences, sw)
+    print(unks)
     for unk in unks:
         print(unk)
         print(revert(sentences[unk[0]]))
@@ -62,7 +63,7 @@ def penalize_sw(words, partial, N, sw):
     if csw == len(words):
         return 100000
     else:
-        return partial
+        return partial/N
 
 def compute_score(sentence, formas, sw):
     words = sentence.split()
