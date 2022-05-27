@@ -5,7 +5,7 @@ import os
 import re
 import numpy as np
 import preprocessing
-
+import dictionary
 
 class FileReader:
 	def __init__(self, file):
@@ -15,6 +15,7 @@ class FileReader:
 		self.text = self.pp.file2text(self.file)
 		self.paragraphs = False
 		self.sentences = False
+		self.sentences_types = False
 		self.tokens = False
 		self.vocab = False
 
@@ -36,14 +37,20 @@ class FileReader:
 		self.sentences = self.pp.text2sentences(self.text)
 		return self.sentences
 
+	def get_sentences_types(self):
+		""" returns text as a list of sentences
+		considering types only and stopwords removed """
+		self.sentences_types = self.pp.text2sentences_types(self.text)
+		return self.sentences_types
+
 	def get_tokens(self):
 		""" returns text as a list of tokens """
-		self.tokens = self.pp.text2tokens(self.text)
+		self.tokens = self.pp.text2tokens(self.text, per_sentence=False)
 		return self.tokens
 
 	def get_vocab(self):
 		""" returns text as a list of unique vocabulary """
-		self.vocab = set(self.pp.text2tokens(self.text))
+		self.vocab = set(self.pp.text2tokens(self.text, per_sentence=False))
 		return self.vocab
 
 	def describe(self):
@@ -53,7 +60,8 @@ class FileReader:
 			'n_sentences': len(self.get_sentences()),
 			'n_tokens': len(self.get_tokens()),
 			'n_vocab': len(self.get_vocab()),
-			'avg_tok_sent': np.round(sum([len(s) for s in self.sentences])/len(self.sentences),0)
+			'avg_tok_sent': np.round(sum([len(s) for s in self.sentences])/len(self.sentences),0),
+			'avg_type_sent': np.round(sum([len(s) for s in self.sentences_types])/len(self.sentences_types),0)
 		}
 		return self.stats
 
@@ -62,13 +70,15 @@ class FileReader:
 		pass
 
 if __name__ == '__main__':
-	file = 'subterra/CAZA MAYOR.txt'
+	file = 'subterra/CAZA MAYOR3.txt'
 	fr = FileReader(file)
-	t = fr.get_text()
-	v = fr.get_vocab()
-	s = fr.get_sentences()
+	t = fr.get_text()  # keeps punctuation and stopwords
+	v = fr.get_vocab()  # removed punctuation and stopwords
+	tk = fr.get_tokens()  # removed punctuation and stopwords
+	s = fr.get_sentences()  # keeps punctuation and stopwords
+	st = fr.get_sentences_types()  # removed punctuation and stopwords
 	d = fr.describe()
-	print(d)
-	for se in s:
-		print(se)
-		print()
+	print('describe:', d)
+	drae = dictionary.DRAE()
+	print(tk[0])
+	drae.search_meaning(tk[0])
