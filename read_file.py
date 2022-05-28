@@ -3,14 +3,17 @@
 
 import os
 import re
+import sys
 from tqdm import tqdm
 import numpy as np
 import preprocessing
 import dictionary
+import generator
+
 
 class FileReader:
-	def __init__(self, file, formas_file):
-		self.file = self.read_file(file)
+	def __init__(self, text_file, formas_file='10000_formas.txt'):
+		self.file = self.read_file(text_file)
 		self.pp = preprocessing.FilePreprocesser()
 		self.formas = preprocessing.Formas(formas_file).formas
 		self.drae = dictionary.DRAE()
@@ -126,23 +129,29 @@ class FileReader:
 				rs.append((word, None))
 		return rs
 
+def main(file):
+	Fr = FileReader(file)
+	sm = Fr.get_target_sentences()
+	print(sm)
+	Gn = generator.Generator(sm, 'test.txt')
 
 if __name__ == '__main__':
-	file = 'subterra/CAZA MAYOR3.txt'
-	formas = '10000_formas.txt'
-	fr = FileReader(file, formas)
-	t = fr.get_text()  # keeps punctuation and stopwords
-	v = fr.get_vocab()  # removed punctuation and stopwords
-	tk = fr.get_tokens()  # removed punctuation and stopwords
-	s = fr.get_sentences()  # keeps punctuation and stopwords
-	st = fr.get_sentences_types()  # removed punctuation and stopwords
-	d = fr.describe()
-	print('describe:', d)
+	#file = 'subterra/CAZA MAYOR3.txt'
+	# formas = '10000_formas.txt'
+	# fr = FileReader(file, formas)
+	# t = fr.get_text()  # keeps punctuation and stopwords
+	# v = fr.get_vocab()  # removed punctuation and stopwords
+	# tk = fr.get_tokens()  # removed punctuation and stopwords
+	# s = fr.get_sentences()  # keeps punctuation and stopwords
+	# st = fr.get_sentences_types()  # removed punctuation and stopwords
+	# d = fr.describe()
+	# print('describe:', d)
 	#drae = dictionary.DRAE()
 	#sa = drae.search_sinonyms('elevábanse')
 	#print(sa['synonyms'])
 	#print(sa['antonyms'])
 
-	tv = fr.get_target_vocab()
-	sm = fr.get_target_sentences()
-	print(sm)
+	# tv = fr.get_target_vocab()
+	# sm = fr.get_target_sentences()
+	# print(sm)
+	main(sys.argv[1])

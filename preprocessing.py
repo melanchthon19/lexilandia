@@ -4,12 +4,17 @@
 import os
 import re
 from string import punctuation
+import nltk
 from nltk.corpus import stopwords
 
 
 class FilePreprocesser:
 	def __init__(self):
-		self.stopwords = stopwords.words('spanish')
+		try:
+			self.stopwords = stopwords.words('spanish')
+		except LookupError:
+			nltk.download('stopwords')
+			self.stopwords = stopwords.words('spanish')
 
 	def file2text(self, file):
 		raw = [line for line in file.split('\n') if line]

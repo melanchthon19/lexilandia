@@ -19,7 +19,7 @@ class DRAE:
 		self.page = requests.get(self.drae + word, headers=self.headers)
 		if self.page.status_code != 200:
 			return ['No se pudo acceder a ' + self.drae]
-		soup = BeautifulSoup(self.page.content, 'lxml')
+		soup = BeautifulSoup(self.page.content, 'html.parser')
 		results = soup.find_all('p', attrs={'class':'j'})
 		meanings = [result.text for result in results[:self.max_meanings-1]]
 		if len(meanings) == 0:
@@ -30,7 +30,7 @@ class DRAE:
 		self.page = requests.get(self.wordreference + word)
 		if self.page.status_code != 200:
 			return ['No se pudo acceder a ' + self.drae]
-		soup = BeautifulSoup(self.page.content, 'lxml')
+		soup = BeautifulSoup(self.page.content, 'html.parser')
 		results = soup.find_all('div', attrs={'class':'trans clickable'})
 
 		synonyms = []
