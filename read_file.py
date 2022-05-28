@@ -3,14 +3,17 @@
 
 import os
 import re
+from tqdm import tqdm
 import numpy as np
 import preprocessing
 import dictionary
 
 class FileReader:
-	def __init__(self, file):
+	def __init__(self, file, formas_file):
 		self.file = self.read_file(file)
 		self.pp = preprocessing.FilePreprocesser()
+		self.formas = preprocessing.Formas(formas_file).formas
+		self.drae = dictionary.DRAE()
 
 		self.text = self.pp.file2text(self.file)
 		self.paragraphs = False
@@ -65,13 +68,69 @@ class FileReader:
 		}
 		return self.stats
 
+	def get_target_sentences(self):
+		""" returns a list of pairs:
+		(original sentences, target meanings).
+		target meanings are dictionaries with each
+		target vocab and its synonyms and antonyms"""
+		sentences = self.pp.text2sentences(self.text)
+		target_vocab = self.get_target_vocab()
+		target_sa = []
+		for s in tqdm(target_vocab):
+			if s:
+				target_sa.append({tv[0]:
+					[self.drae.search_meaning(tv[0]),
+					self.drae.search_sinonyms(tv[0])]
+					for tv in s})
+			else:
+				target_sa.append([])
+		target_sentences = [(' '.join(sentences[i]), target_sa[i]) for i in range(len(sentences))]
+		return target_sentences
+
 	def get_target_vocab(self):
-		""" returns a list of interesting vocabulary """
-		pass
+		""" returns a list of interesting vocabulary
+		considering most unfrequent tokens according
+		to given formas and their rank """
+		self.sentences = self.pp.text2sentences(self.text, remove_punct=True, remove_sw=True, lower=True)
+		ranked_sentences = [self.rank_sentence(s) for s in self.sentences]
+		target_vocab = [self.mark_vocab(s) for s in ranked_sentences]
+		return target_vocab
+
+	def mark_vocab(self, sentence, threshold=None):
+		""" returns the sentence filtered by threshold.
+		by default it consideres words in the sentence
+		that were not found in formas
+		thus do not have any rank """
+		mark_vocab = []
+		if threshold:
+			for word in sentence:
+				try:
+					if word[1] >= threshold:
+						mark_vocab.append(word)
+				except TypeError:
+					mark_vocab.append(word)
+			return mark_vocab
+
+		return [word for word in sentence if word[1]==threshold]
+
+	def rank_sentence(self, sentence):
+		""" returns the sentence as a list of pairs:
+		(word, rank) according to given formas and their rank.
+		if word is not found in formas,
+		then it returns (word, None) """
+		rs = []
+		for word in sentence:
+			try:
+				rs.append((word, self.formas[word]))
+			except KeyError:
+				rs.append((word, None))
+		return rs
+
 
 if __name__ == '__main__':
 	file = 'subterra/CAZA MAYOR3.txt'
-	fr = FileReader(file)
+	formas = '10000_formas.txt'
+	fr = FileReader(file, formas)
 	t = fr.get_text()  # keeps punctuation and stopwords
 	v = fr.get_vocab()  # removed punctuation and stopwords
 	tk = fr.get_tokens()  # removed punctuation and stopwords
@@ -79,6 +138,11 @@ if __name__ == '__main__':
 	st = fr.get_sentences_types()  # removed punctuation and stopwords
 	d = fr.describe()
 	print('describe:', d)
-	drae = dictionary.DRAE()
-	print(tk[0])
-	drae.search_meaning(tk[0])
+	#drae = dictionary.DRAE()
+	#sa = drae.search_sinonyms('elevábanse')
+	#print(sa['synonyms'])
+	#print(sa['antonyms'])
+
+	tv = fr.get_target_vocab()
+	sm = fr.get_target_sentences()
+	print(sm)
