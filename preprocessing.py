@@ -15,9 +15,16 @@ class FilePreprocesser:
 		raw = [line for line in file.split('\n') if line]
 		return raw
 
-	def text2sentences(self, text, remove_punct=False, remove_sw=False):
-		# TODO: add punct and sw flags
+	def text2sentences(self, text, remove_punct=False, remove_sw=False, lower=False):
 		sentences = [s.strip().split() for p in text for s in p.split('.') if s]
+
+		if remove_punct:
+			sentences = [self.remove_punctuation(s[:]) for s in sentences]
+		if remove_sw:
+			sentences = [self.remove_stopwords(s[:]) for s in sentences]
+		if lower:
+			sentences = [[tok.lower() for tok in s] for s in sentences]
+
 		return sentences
 
 	def text2sentences_types(self, text, per_sentence=True, remove_punct=True, remove_sw=True, lower=True):
@@ -28,6 +35,7 @@ class FilePreprocesser:
 	def text2tokens(self, text, per_sentence=True, remove_punct=True, remove_sw=True, lower=True):
 		sentences = self.text2sentences(text)
 		tokens = []
+		# TODO: use list comprehension
 		for s in sentences:
 			tokens_s = []
 			if remove_punct:
@@ -48,3 +56,19 @@ class FilePreprocesser:
 
 	def remove_stopwords(self, tokens):
 		return [tok for tok in tokens if tok not in self.stopwords]
+
+class Formas:
+	def __init__(self, formas_file):
+		self.formas = self.read_file(formas_file)
+
+	def read_file(self, file):
+		formas = {}
+		with open(file, 'r', encoding='latin-1') as f:
+			lines = f.readlines()
+			for line in lines[1:]:  # skipping head
+				row = re.split(r'[\t\n]', line)
+				row = [r.strip() for r in row if r]
+				# [Orden, Forma, Frec.absoluta, Frec.normalizada]
+				# ['10000.', 'normalización', '1,182', '7.74']
+				formas[row[1]] = int(re.search(r'\d+', row[0]).group(0))
+		return formas
