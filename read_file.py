@@ -4,21 +4,26 @@
 import os
 import re
 import sys
+from io import BytesIO
 from tqdm import tqdm
 import numpy as np
-import preprocessing
-import dictionary
-import generator
+from . import preprocessing
+from . import dictionary
+from . import generator
 
 
 class FileReader:
-	def __init__(self, text_file, formas_file='10000_formas.txt'):
-		self.file = self.read_file(text_file)
+	def __init__(self, text_file, formas_file='lexilandia/10000_formas.txt'):
 		self.pp = preprocessing.FilePreprocesser()
 		self.formas = preprocessing.Formas(formas_file).formas
 		self.drae = dictionary.DRAE()
 
-		self.text = self.pp.file2text(self.file)
+		if isinstance(text_file, str):
+			self.text = text_file
+		else:
+			self.file = self.read_file(text_file)
+			self.text = self.pp.file2text(self.file)
+
 		self.paragraphs = False
 		self.sentences = False
 		self.sentences_types = False
@@ -27,8 +32,15 @@ class FileReader:
 
 	def read_file(self, file):
 		""" reads the file """
-		with open(file, 'r') as f:
-			return f.read()
+		try:
+			with open(file, 'r') as f:
+				return f.read()
+		except TypeError:
+			# TODO: FIX THIS BOILERPLATE
+			f = file.open().read().decode()
+			f = re.sub(r"'\\ufeff", '', repr(f))
+			f = re.sub(r"\\n|\\\\n", '', f)
+			return f
 
 	def get_file(self):
 		""" returns the input file as it is """
@@ -78,17 +90,29 @@ class FileReader:
 		target vocab and its synonyms and antonyms"""
 		sentences = self.pp.text2sentences(self.text)
 		target_vocab = self.get_target_vocab()
-		target_sa = []
-		for s in tqdm(target_vocab):
-			if s:
-				target_sa.append({tv[0]:
-					[self.drae.search_meaning(tv[0]),
-					self.drae.search_sinonyms(tv[0])]
-					for tv in s})
-			else:
-				target_sa.append([])
+		target_sa = get_target_meanings(target_vocab)
 		target_sentences = [(' '.join(sentences[i]), target_sa[i]) for i in range(len(sentences))]
 		return target_sentences
+
+	def get_target_meanings(self, target_vocab, from_django=False):
+		target_sa = []
+		# django implementation
+		if from_django:
+			for word in tqdm(target_vocab):
+				target_sa.append({word:
+					[self.drae.search_meaning(word),
+					self.drae.search_sinonyms(word)]})
+			return target_sa
+		else:  # standalone file implementation
+			for s in tqdm(target_vocab):
+				if s:
+					target_sa.append({tv[0]:
+						[self.drae.search_meaning(tv[0]),
+						self.drae.search_sinonyms(tv[0])]
+						for tv in s})
+				else:
+					target_sa.append([])
+		return target_sa
 
 	def get_target_vocab(self):
 		""" returns a list of interesting vocabulary
