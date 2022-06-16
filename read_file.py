@@ -19,7 +19,8 @@ class FileReader:
 		self.drae = dictionary.DRAE()
 
 		if isinstance(text_file, str):
-			self.text = text_file
+			self.text = self.pp.clean_text(text_file)
+			print(self.text)
 		else:
 			self.file = self.read_file(text_file)
 			self.text = self.pp.file2text(self.file)
@@ -95,16 +96,25 @@ class FileReader:
 		return target_sentences
 
 	def get_target_meanings(self, target_vocab, from_django=False):
+		#lemma_vocab = self.pp.lemmatize(target_vocab)
 		target_sa = []
 		# django implementation
 		if from_django:
 			for word in tqdm(target_vocab):
-				target_sa.append({word:
+				tm = {word:
 					[self.drae.search_meaning(word),
-					self.drae.search_sinonyms(word)]})
+					self.drae.search_sinonyms(word)]}
+				# if tm[word][0] == ['Definiciones no encontradas']:
+				# 	word = self.pp.lemmatize(word)
+				# 	tm = {word:
+				# 		[self.drae.search_meaning(word),
+				# 		self.drae.search_sinonyms(word)]}
+				target_sa.append(tm)
+
+			#print(target_vocab, lemma_vocab)
 			return target_sa
 		else:  # standalone file implementation
-			for s in tqdm(target_vocab):
+			for s in tqdm(lemma_vocab):
 				if s:
 					target_sa.append({tv[0]:
 						[self.drae.search_meaning(tv[0]),
