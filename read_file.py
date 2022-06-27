@@ -9,7 +9,6 @@ from tqdm import tqdm
 import numpy as np
 from . import preprocessing
 from . import dictionary
-from . import generator
 
 
 class FileReader:

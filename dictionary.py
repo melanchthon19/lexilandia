@@ -12,6 +12,8 @@ class DRAE:
 		self.drae = 'https://dle.rae.es/'
 		self.wordreference = 'https://www.wordreference.com/sinonimos/'
 		self.linguee = 'https://www.linguee.es/espanol-ingles/search?source=auto&query='
+		self.frazo = 'https://www.frazodict.com/es/es/'
+		self.foboko = 'https://www.foboko.com/diccionario-frases/espanol/'
 		self.page = False
 		self.headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36'}
 		self.max_meanings = 3
@@ -74,7 +76,59 @@ class DRAE:
 			ts[word] = sentences[:3]
 		return ts
 
+	def search_sentences_frazo(self, words):
+		ts = {}
+		for word in words:
+			self.page = requests.get(self.linguee + word)
+			if self.page.status_code != 200:
+				return ['No se pudo acceder a ' + self.frazo]
+			soup = BeautifulSoup(self.page.content, 'html.parser')
+			print(soup.prettify())
+			results = soup.find_all('td', attrs={'class':'sentence left'})
+			# results = soup.find('ol')
+			results = [r.text for r in results]
+			print(results)
+			# # preprocessing
+			# sentences = [re.sub(r'\xa0|\r|\[...\]', ' ', r) for r in results]
+			# sentences =[re.sub(r' +', ' ', s).strip() for s in sentences]
+			# sentences = [s.split('\n') for s in sentences]
+			# for i in range(len(sentences)):
+			# 	pat = sentences[i][-1]
+			# 	sentences[i] = sentences[i][:-1]
+			# 	sentences[i][-1] = re.sub(rf'{pat}', '', sentences[i][-1])
+			# sentences = [''.join(s) for s in sentences]
+			# sentences = [re.sub(' +', ' ', s).strip() for s in sentences]
+			#
+			# ts[word] = sentences[:3]
+		return ts
+
+	def search_sentences_foboko(self, words):
+		ts = {}
+		for word in words:
+			self.page = requests.get(self.linguee + word)
+			if self.page.status_code != 200:
+				return ['No se pudo acceder a ' + self.foboko]
+			soup = BeautifulSoup(self.page.content, 'html.parser')
+			print(soup.prettify())
+			results = soup.find_all('div', attrs={'class':'tab-content'})
+			# results = soup.find('ol')
+			results = [r.text for r in results]
+			print(results)
+			# # preprocessing
+			# sentences = [re.sub(r'\xa0|\r|\[...\]', ' ', r) for r in results]
+			# sentences =[re.sub(r' +', ' ', s).strip() for s in sentences]
+			# sentences = [s.split('\n') for s in sentences]
+			# for i in range(len(sentences)):
+			# 	pat = sentences[i][-1]
+			# 	sentences[i] = sentences[i][:-1]
+			# 	sentences[i][-1] = re.sub(rf'{pat}', '', sentences[i][-1])
+			# sentences = [''.join(s) for s in sentences]
+			# sentences = [re.sub(' +', ' ', s).strip() for s in sentences]
+			#
+			# ts[word] = sentences[:3]
+		return ts
+
 if __name__ == "__main__":
 	d = DRAE()
-	ts = d.search_sentences(['llamándola', 'capricho'])
-	print(ts)
+	ts = d.search_sentences_foboko(['capricho'])
+	#print(ts)
