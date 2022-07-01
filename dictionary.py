@@ -11,6 +11,7 @@ class DRAE:
 	def __init__(self):
 		self.drae = 'https://dle.rae.es/'
 		self.wordreference = 'https://www.wordreference.com/sinonimos/'
+		self.sinonimosonline = 'https://www.sinonimosonline.com/'
 		self.linguee = 'https://www.linguee.es/espanol-ingles/search?source=auto&query='
 		self.frazo = 'https://www.frazodict.com/es/es/'
 		self.foboko = 'https://www.foboko.com/diccionario-frases/espanol/'
@@ -29,7 +30,17 @@ class DRAE:
 			return ['Definiciones no encontradas']
 		return meanings
 
+	def search_synonyms(self, word):
+		self.page = requests.get(self.sinonimosonline + word)
+		if self.page.status_code != 200:
+			return ['No se pudo acceder a ' + self.sinonimosonline]
+		soup = BeautifulSoup(self.page.content, 'html.parser')
+		results = soup.find_all('p', attrs={'class':'sinonimos'})
+		synonyms = [re.sub(r'^\d ', '', r.text, count=1) for r in results]
+		return synonyms
+
 	def search_sinonyms(self, word):
+		# not using this one
 		self.page = requests.get(self.wordreference + word)
 		if self.page.status_code != 200:
 			return ['No se pudo acceder a ' + self.wordreference]
@@ -56,7 +67,10 @@ class DRAE:
 	def search_sentences(self, words):
 		ts = {}
 		for word in words:
-			self.page = requests.get(self.linguee + word)
+			try:
+				self.page = requests.get(self.linguee + word)
+			except requests.exceptions.ConnectionError:
+				return ['No se pudo acceder a ' + self.linguee]
 			if self.page.status_code != 200:
 				return ['No se pudo acceder a ' + self.linguee]
 			soup = BeautifulSoup(self.page.content, 'html.parser')
@@ -130,5 +144,5 @@ class DRAE:
 
 if __name__ == "__main__":
 	d = DRAE()
-	ts = d.search_sentences_foboko(['capricho'])
+	ts = d.search_synonyms('comería')
 	#print(ts)

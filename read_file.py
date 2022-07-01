@@ -102,7 +102,7 @@ class FileReader:
 			for word in tqdm(target_vocab):
 				tm = {word:
 					[self.drae.search_meaning(word),
-					self.drae.search_sinonyms(word)]}
+					self.drae.search_synonyms(word)]}
 				# if tm[word][0] == ['Definiciones no encontradas']:
 				# 	word = self.pp.lemmatize(word)
 				# 	tm = {word:
