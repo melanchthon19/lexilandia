@@ -14,7 +14,7 @@ from . import dictionary
 class FileReader:
 	def __init__(self, text_file, formas_file='lexilandia/10000_formas.txt'):
 		self.pp = preprocessing.FilePreprocesser()
-		self.formas = preprocessing.Formas(formas_file).formas
+		#self.formas = preprocessing.Formas(formas_file).formas
 		self.drae = dictionary.DRAE()
 
 		if isinstance(text_file, str):
