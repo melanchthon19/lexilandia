@@ -32,18 +32,25 @@ class DRAE:
 		meanings = [result.text for result in results[:self.max_meanings-1]]
 		if len(meanings) == 0:
 			return ['Definiciones no encontradas']
+			print('meanings:\n', meanings)
 		return meanings
 
 	def search_synonyms(self, word):
-		self.page = requests.get(self.sinonimosonline + word)
+		print('searching synonyms: ', word)
+		try:
+			self.page = requests.get(self.sinonimosonline + word)
+		except ConnectionError:
+			return ['No se pudo acceder a ' + self.sinonimosonline]
 		if self.page.status_code != 200:
 			return ['No se pudo acceder a ' + self.sinonimosonline]
 		soup = BeautifulSoup(self.page.content, 'html.parser')
 		results = soup.find_all('p', attrs={'class':'sinonimos'})
 		synonyms = [re.sub(r'^\d ', '', r.text, count=1) for r in results]
+		print('synonyms:\n', synonyms)
 		return synonyms
 
 	def search_sinonyms(self, word):
+		# not being used
 		print('searching synonyms: ', word)
 		try:
 			self.page = requests.get(self.wordreference + word)
@@ -96,6 +103,7 @@ class DRAE:
 			sentences = [re.sub(' +', ' ', s).strip() for s in sentences]
 
 			ts[word] = sentences[:3]
+		print('sentences:\n', sentences)
 		return ts
 
 	def search_sentences_frazo(self, words):
