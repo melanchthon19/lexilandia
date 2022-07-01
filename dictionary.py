@@ -5,7 +5,7 @@ import os
 import re
 import requests
 from bs4 import BeautifulSoup
-
+from requests.exceptions import ConnectionError
 
 class DRAE:
 	def __init__(self):
@@ -20,15 +20,19 @@ class DRAE:
 		self.max_meanings = 3
 
 	def search_meaning(self, word):
-		self.page = requests.get(self.drae + word, headers=self.headers)
-		if self.page.status_code != 200:
-			return ['No se pudo acceder a ' + self.drae]
-		soup = BeautifulSoup(self.page.content, 'html.parser')
-		results = soup.find_all('p', attrs={'class':'j'})
-		meanings = [result.text for result in results[:self.max_meanings-1]]
-		if len(meanings) == 0:
-			return ['Definiciones no encontradas']
-		return meanings
+	    print('searching meaning: ', word)
+	    try:
+	        self.page = requests.get(self.drae + word, headers=self.headers)
+	    except ConnectionError:
+	        return ['No se pudo acceder a ' + self.drae]
+	    if self.page.status_code != 200:
+	        return ['No se pudo acceder a ' + self.drae]
+	    soup = BeautifulSoup(self.page.content, 'html.parser')
+	    results = soup.find_all('p', attrs={'class':'j'})
+	    meanings = [result.text for result in results[:self.max_meanings-1]]
+	    if len(meanings) == 0:
+		    return ['Definiciones no encontradas']
+	    return meanings
 
 	def search_synonyms(self, word):
 		self.page = requests.get(self.sinonimosonline + word)
@@ -40,37 +44,47 @@ class DRAE:
 		return synonyms
 
 	def search_sinonyms(self, word):
-		# not using this one
-		self.page = requests.get(self.wordreference + word)
-		if self.page.status_code != 200:
-			return ['No se pudo acceder a ' + self.wordreference]
-		soup = BeautifulSoup(self.page.content, 'html.parser')
-		results = soup.find_all('div', attrs={'class':'trans clickable'})
+	    print('searching synonyms: ', word)
+	    try:
+	        self.page = requests.get(self.wordreference + word)
+	    except ConnectionError:
+	        return ['No se pudo acceder a ' + self.wordreference]
+	    if self.page.status_code != 200:
+	        return ['No se pudo acceder a ' + self.wordreference]
+	    soup = BeautifulSoup(self.page.content, 'html.parser')
+	    results = soup.find_all('div', attrs={'class':'trans clickable'})
 
-		synonyms = []
-		antonyms = []
-		for r in results:
-			li = r.find_all('li')
-			for l in li:
-				if re.search('[aA]nt[oó]nimo[s]', str(l)):
-					antonyms.append(re.sub(r'</*span.*?>|</*li>|[aA]nt[oó]nimo[s]: ', '', str(l)))
-				else:
-					synonyms.append(re.sub(r'</*li>', '', str(l)))
+	    synonyms = []
+	    antonyms = []
+	    for r in results:
+	        li = r.find_all('li')
+	        for l in li:
+	            if re.search('[aA]nt[oó]nimo[s]', str(l)):
+	                antonyms.append(re.sub(r'</*span.*?>|</*li>|[aA]nt[oó]nimo[s]: ', '', str(l)))
+	            else:
+	                synonyms.append(re.sub(r'</*li>', '', str(l)))
 
-		if not antonyms:
-			antonyms = ['Antónimos no encontrados']
-		if not synonyms:
-			synonyms = ['Sinónimos no encontrados']
+	    if not antonyms:
+	        antonyms = ['Antónimos no encontrados']
+	    if not synonyms:
+	        synonyms = ['Sinónimos no encontrados']
 
-		return {'synonyms': synonyms, 'antonyms': antonyms}
+	    return {'synonyms': synonyms, 'antonyms': antonyms}
 
 	def search_sentences(self, words):
 		ts = {}
 		for word in words:
 			try:
+<<<<<<< HEAD
 				self.page = requests.get(self.linguee + word)
 			except requests.exceptions.ConnectionError:
 				return ['No se pudo acceder a ' + self.linguee]
+=======
+			    print('searching sentences: ', word)
+			    self.page = requests.get(self.linguee + word)
+			except:
+			    return ['No se pudo acceder a ' + self.linguee]
+>>>>>>> f76b6aef2f4099e997a353b3fc135de45b1b0416
 			if self.page.status_code != 200:
 				return ['No se pudo acceder a ' + self.linguee]
 			soup = BeautifulSoup(self.page.content, 'html.parser')
@@ -144,5 +158,10 @@ class DRAE:
 
 if __name__ == "__main__":
 	d = DRAE()
+<<<<<<< HEAD
 	ts = d.search_synonyms('comería')
 	#print(ts)
+=======
+	ts = d.search_sentences(['capricho'])
+	print(ts)
+>>>>>>> f76b6aef2f4099e997a353b3fc135de45b1b0416
