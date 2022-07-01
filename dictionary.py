@@ -45,7 +45,7 @@ class DRAE:
 		except ConnectionError:
 			return ['No se pudo acceder a ' + self.sinonimosonline]
 		if self.page.status_code != 200:
-			word = pp.lemmatize(word)
+			word = self.pp.lemmatize(word)
 			try:
 				self.page = requests.get(self.sinonimosonline + word)
 			except ConnectionError:
