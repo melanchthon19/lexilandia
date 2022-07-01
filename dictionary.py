@@ -152,10 +152,4 @@ class DRAE:
 
 if __name__ == "__main__":
 	d = DRAE()
-<<<<<<< HEAD
 	ts = d.search_synonyms('comería')
-	#print(ts)
-=======
-	ts = d.search_sentences(['capricho'])
-	print(ts)
->>>>>>> f76b6aef2f4099e997a353b3fc135de45b1b0416
