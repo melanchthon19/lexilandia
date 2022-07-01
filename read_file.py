@@ -12,7 +12,7 @@ from . import dictionary
 
 
 class FileReader:
-	def __init__(self, text_file, formas_file='lexilandia/10000_formas.txt'):
+	def __init__(self, text_file, formas_file='laguiadelprofe/lexilandia/10000_formas.txt'):
 		self.pp = preprocessing.FilePreprocesser()
 		self.formas = preprocessing.Formas(formas_file).formas
 		self.drae = dictionary.DRAE()
@@ -90,7 +90,7 @@ class FileReader:
 		target vocab and its synonyms and antonyms"""
 		sentences = self.pp.text2sentences(self.text)
 		target_vocab = self.get_target_vocab()
-		target_sa = get_target_meanings(target_vocab)
+		target_sa = self.get_target_meanings(target_vocab)
 		target_sentences = [(' '.join(sentences[i]), target_sa[i]) for i in range(len(sentences))]
 		return target_sentences
 
