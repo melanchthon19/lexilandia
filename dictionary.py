@@ -6,6 +6,7 @@ import re
 import requests
 from bs4 import BeautifulSoup
 from requests.exceptions import ConnectionError
+from . import preprocessing
 
 class DRAE:
 	def __init__(self):
@@ -18,6 +19,8 @@ class DRAE:
 		self.page = False
 		self.headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 12_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/102.0.5005.63 Safari/537.36'}
 		self.max_meanings = 3
+
+		self.pp = preprocessing.FilePreprocesser()
 
 	def search_meaning(self, word):
 		print('searching meaning: ', word)
@@ -42,7 +45,13 @@ class DRAE:
 		except ConnectionError:
 			return ['No se pudo acceder a ' + self.sinonimosonline]
 		if self.page.status_code != 200:
-			return ['No se pudo acceder a ' + self.sinonimosonline]
+			word = pp.lemmatize(word)
+			try:
+				self.page = requests.get(self.sinonimosonline + word)
+			except ConnectionError:
+				return ['No se pudo acceder a ' + self.sinonimosonline]
+			if self.page.status_code != 200:
+				return ['No se pudo acceder a ' + self.sinonimosonline]
 		soup = BeautifulSoup(self.page.content, 'html.parser')
 		results = soup.find_all('p', attrs={'class':'sinonimos'})
 		synonyms = [re.sub(r'^\d ', '', r.text, count=1) for r in results]
