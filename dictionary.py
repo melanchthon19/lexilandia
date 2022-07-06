@@ -26,8 +26,12 @@ class DRAE:
 		print('searching meaning: ', word)
 		try:
 			self.page = requests.get(self.drae + word, headers=self.headers)
+			if self.page.status_code == 404:
+				raise ConnectionError
 		except ConnectionError:
-			return ['No se pudo acceder a ' + self.drae]
+			word = self.pp.lemmatize(word)
+			print('searching meaning lemma: ', word)
+			self.page = requests.get(self.drae + word, headers=self.headers)
 		if self.page.status_code != 200:
 			return ['No se pudo acceder a ' + self.drae]
 		soup = BeautifulSoup(self.page.content, 'html.parser')
@@ -42,52 +46,50 @@ class DRAE:
 		print('searching synonyms: ', word)
 		try:
 			self.page = requests.get(self.sinonimosonline + word)
+			if self.page.status_code == 404:
+				raise ConnectionError
 		except ConnectionError:
-			return ['No se pudo acceder a ' + self.sinonimosonline]
-		if self.page.status_code != 200:
 			word = self.pp.lemmatize(word)
-			try:
-				self.page = requests.get(self.sinonimosonline + word)
-			except ConnectionError:
-				return ['No se pudo acceder a ' + self.sinonimosonline]
-			if self.page.status_code != 200:
-				return ['No se pudo acceder a ' + self.sinonimosonline]
+			print('searching synonyms lemma: ', word)
+			self.page = requests.get(self.sinonimosonline + word)
+		if self.page.status_code != 200:
+			print(self.page.status_code)
+			return ['No se pudo acceder a ' + self.sinonimosonline]
 		soup = BeautifulSoup(self.page.content, 'html.parser')
 		results = soup.find_all('p', attrs={'class':'sinonimos'})
 		synonyms = [re.sub(r'^\d ', '', r.text, count=1) for r in results]
+		synonyms = [s.split('.')[0] for s in synonyms]
 		print('synonyms:\n', synonyms)
 		return synonyms
 
-	def search_sinonyms(self, word):
-		# not being used
-		print('searching synonyms: ', word)
+	def search_sentences(self, word):
+		ts = {}
 		try:
-			self.page = requests.get(self.wordreference + word)
-		except ConnectionError:
-			return ['No se pudo acceder a ' + self.wordreference]
+			print('searching sentences: ', word)
+			self.page = requests.get(self.linguee + word)
+		except requests.exceptions.ConnectionError:
+			return ['No se pudo acceder a ' + self.linguee]
 		if self.page.status_code != 200:
-			return ['No se pudo acceder a ' + self.wordreference]
+			return ['No se pudo acceder a ' + self.linguee]
 		soup = BeautifulSoup(self.page.content, 'html.parser')
-		results = soup.find_all('div', attrs={'class':'trans clickable'})
+		results = soup.find_all('td', attrs={'class':'sentence left'})
+		results = [r.text for r in results]
+		# preprocessing
+		sentences = [re.sub(r'\xa0|\r|\[...\]', ' ', r) for r in results]
+		sentences =[re.sub(r' +', ' ', s).strip() for s in sentences]
+		sentences = [s.split('\n') for s in sentences]
+		for i in range(len(sentences)):
+			pat = sentences[i][-1]
+			sentences[i] = sentences[i][:-1]
+			sentences[i][-1] = re.sub(rf'{pat}', '', sentences[i][-1])
+		sentences = [''.join(s) for s in sentences]
+		sentences = [re.sub(' +', ' ', s).strip() for s in sentences]
 
-		synonyms = []
-		antonyms = []
-		for r in results:
-			li = r.find_all('li')
-			for l in li:
-				if re.search('[aA]nt[oó]nimo[s]', str(l)):
-					antonyms.append(re.sub(r'</*span.*?>|</*li>|[aA]nt[oó]nimo[s]: ', '', str(l)))
-				else:
-					synonyms.append(re.sub(r'</*li>', '', str(l)))
+		ts = sentences[:3]
+		print(f'sentences of {word}:\n', ts)
+		return ts
 
-		if not antonyms:
-			antonyms = ['Antónimos no encontrados']
-		if not synonyms:
-			synonyms = ['Sinónimos no encontrados']
-
-		return {'synonyms': synonyms, 'antonyms': antonyms}
-
-	def search_sentences(self, words):
+	def search_sentences_OLD(self, words):
 		ts = {}
 		for word in words:
 			try:

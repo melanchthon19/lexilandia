@@ -96,21 +96,17 @@ class FileReader:
 
 	def get_target_meanings(self, target_vocab, from_django=False):
 		#lemma_vocab = self.pp.lemmatize(target_vocab)
-		target_sa = []
+		target_sa = {}
 		# django implementation
 		if from_django:
 			for word in tqdm(target_vocab):
-				tm = {word:
-					[self.drae.search_meaning(word),
-					self.drae.search_synonyms(word)]}
-				# if tm[word][0] == ['Definiciones no encontradas']:
-				# 	word = self.pp.lemmatize(word)
-				# 	tm = {word:
-				# 		[self.drae.search_meaning(word),
-				# 		self.drae.search_sinonyms(word)]}
-				target_sa.append(tm)
-
+				target_sa[word] = {
+					'meanings': self.drae.search_meaning(word),
+					'synonyms': self.drae.search_synonyms(word),
+					'sentences': self.drae.search_sentences(word)
+					}
 			#print(target_vocab, lemma_vocab)
+			print('target_sa:\n', target_sa)
 			return target_sa
 		else:  # standalone file implementation
 			for s in tqdm(lemma_vocab):
