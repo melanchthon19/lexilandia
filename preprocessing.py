@@ -4,12 +4,18 @@
 import os
 import re
 from string import punctuation
+import nltk
 from nltk.corpus import stopwords
+import spacy
 
 
 class FilePreprocesser:
 	def __init__(self):
-		self.stopwords = stopwords.words('spanish')
+		try:
+			self.stopwords = stopwords.words('spanish')
+		except LookupError:
+			nltk.download('stopwords')
+			self.stopwords = stopwords.words('spanish')
 
 	def file2text(self, file):
 		raw = [line for line in file.split('\n') if line]
@@ -51,11 +57,20 @@ class FilePreprocesser:
 			return tokens
 		return tokens
 
+	def clean_text(self, text):
+		text = ''.join([re.sub(r'\d+|—', ' ', c) for c in text])
+		return text
+
 	def remove_punctuation(self, tokens):
 		return [re.sub(r'\W+', '', tok) for tok in tokens]
 
 	def remove_stopwords(self, tokens):
 		return [tok for tok in tokens if tok not in self.stopwords]
+
+	def lemmatize(self, vocab):
+		load_model = spacy.load("es_core_news_sm", disable = ['parser','ner'])
+		l = load_model(vocab)
+		return l[0].lemma_
 
 class Formas:
 	def __init__(self, formas_file):
